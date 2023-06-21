@@ -1,26 +1,131 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math show Random;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:developer' as devtools show log;
 
 void main() {
   runApp(const MyApp());
 }
 
-const names = [
-  "Dele",
-  "Dayo",
-  "Tobi",
-  "Emmma",
-];
-
-extension RandomElement<T> on Iterable<T> {
-  T getRandomElement() => elementAt(math.Random().nextInt(length));
+@immutable
+abstract class LoadAction {
+  const LoadAction();
 }
 
-class NamesCubit extends Cubit<String?> {
-  NamesCubit() : super(null);
+@immutable
+class LoadPersonsAction implements LoadAction {
+  final PersonUrl url;
+  const LoadPersonsAction({
+    required this.url,
+  }) : super();
+}
 
-  void pickRandomName() => emit(names.getRandomElement());
+enum PersonUrl { person1, persons2 }
+
+extension UrlString on PersonUrl {
+  String get urlString {
+    switch (this) {
+      case PersonUrl.person1:
+        return "http://127.0.0.1:5500/api/persons1.json";
+      case PersonUrl.persons2:
+        return "http://127.0.0.1:5500/api/persons2.json";
+    }
+  }
+}
+
+extension Subscript<T> on Iterable<T> {
+  T? operator [](int index) => length > index ? elementAt(index) : null;
+}
+
+extension Log on Object {
+  void log() => devtools.log(toString());
+}
+
+@immutable
+class Person {
+  final String name;
+  final int age;
+  const Person({
+    required this.name,
+    required this.age,
+  });
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'name': name,
+      'age': age,
+    };
+  }
+
+  factory Person.fromMap(Map<String, dynamic> map) {
+    return Person(
+      name: map['name'] as String,
+      age: map['age'] as int,
+    );
+  }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return "name - $name, age - $age";
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory Person.fromJson(String source) =>
+      Person.fromMap(json.decode(source) as Map<String, dynamic>);
+}
+
+Future<Iterable<Person>> getPersons(String url) => HttpClient()
+    .getUrl(Uri.parse(url))
+    .then((req) => req.close())
+    .then((res) => res.transform(utf8.decoder).join())
+    .then((str) => json.decode(str) as List<dynamic>)
+    .then((list) => list.map((e) => Person.fromMap(e)));
+
+@immutable
+class FetchResult {
+  final Iterable<Person> persons;
+  final bool isRetrievedFromCache;
+  const FetchResult({
+    required this.persons,
+    required this.isRetrievedFromCache,
+  });
+
+  @override
+  String toString() =>
+      'Fetched Result (isRetrievedFromCache - $isRetrievedFromCache, persons= $persons )';
+}
+
+class PersonsBloc extends Bloc<LoadAction, FetchResult?> {
+  final Map<PersonUrl, Iterable<Person>> _cache = {};
+  PersonsBloc() : super(null) {
+    on<LoadPersonsAction>(
+      (event, emit) async {
+        final url = event.url;
+        if (_cache.containsKey(url)) {
+          final _cachedPerson = _cache[url];
+          final result = FetchResult(
+            persons: _cachedPerson!,
+            isRetrievedFromCache: true,
+          );
+          emit(result);
+        } else {
+          final persons = await getPersons(url.urlString);
+          _cache[url] = persons;
+          final result = FetchResult(
+            persons: persons,
+            isRetrievedFromCache: false,
+          );
+          emit(result);
+        }
+      },
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -34,7 +139,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(),
+      home: BlocProvider(
+        create: (context) => PersonsBloc(),
+        child: const MyHomePage(),
+      ),
     );
   }
 }
@@ -49,58 +157,63 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late final NamesCubit cubitName;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    cubitName = NamesCubit();
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-    cubitName.close();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter Demo Home Page'),
       ),
-      body: Center(
-        child: StreamBuilder<String?>(
-          stream: cubitName.stream,
-          builder: (context, snapshot) {
-            final button = TextButton(
-              onPressed: () => cubitName.pickRandomName(),
-              child: const Text("Pick a random name"),
-            );
-            switch (snapshot.connectionState) {
-              case ConnectionState.none:
-                return button;
-              case ConnectionState.waiting:
-                return button;
-              case ConnectionState.active:
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(snapshot.data ?? ''),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    button,
-                  ],
-                );
-              case ConnectionState.done:
-                return const SizedBox();
-            }
-          },
-        ),
+      body: Column(
+        children: [
+          Row(
+            children: [
+              TextButton(
+                onPressed: () {
+                  context.read<PersonsBloc>().add(
+                        const LoadPersonsAction(
+                          url: PersonUrl.person1,
+                        ),
+                      );
+                },
+                child: const Text("Load JSON #1"),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              TextButton(
+                onPressed: () {
+                  context.read<PersonsBloc>().add(
+                        const LoadPersonsAction(
+                          url: PersonUrl.persons2,
+                        ),
+                      );
+                },
+                child: const Text("Load JSON #2"),
+              ),
+            ],
+          ),
+          Expanded(
+            child: BlocBuilder<PersonsBloc, FetchResult?>(
+              buildWhen: (previous, current) =>
+                  previous?.persons != current?.persons,
+              builder: (context, fetchedResult) {
+                fetchedResult?.log();
+                final persons = fetchedResult?.persons;
+                if (persons != null) {
+                  return ListView.builder(
+                    itemBuilder: (context, index) {
+                      final person = persons[index];
+                      return Text('${person?.name} - ${person?.age}');
+                    },
+                    itemCount: persons.length,
+                  );
+                } else {
+                  return const SizedBox();
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
