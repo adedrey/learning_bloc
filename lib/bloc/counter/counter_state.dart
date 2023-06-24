@@ -1,4 +1,6 @@
-part of 'counter_cubit.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+
+part of 'counter_bloc.dart';
 
 class CounterState extends Equatable {
   final int counter;
@@ -22,8 +24,5 @@ class CounterState extends Equatable {
   }
 
   @override
-  String toString() {
-    // TODO: implement toString
-    return 'Counter - $counter';
-  }
+  String toString() => 'Counter: $counter';
 }
