@@ -1,4 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:learn_bloc/bloc/theme/theme_bloc.dart';
+import 'package:learn_bloc/bloc/theme/theme_state.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,12 +15,19 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return BlocProvider<ThemeBloc>(
+      create: (context) => ThemeBloc(),
+      child: Builder(
+        builder: (context) {
+          return MaterialApp(
+            title: 'Flutter Demo',
+            theme: context.watch<ThemeBloc>().state.appTheme == AppTheme.light
+                ? ThemeData.light()
+                : ThemeData.dark(),
+            home: const MyHomePage(),
+          );
+        },
       ),
-      home: const MyHomePage(),
     );
   }
 }
@@ -37,28 +49,34 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Flutter Demo Home Page'),
       ),
       body: Center(
-        child: const Text(
-          '0',
-        ),
-      ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: () {},
-            child: Icon(Icons.add),
-            heroTag: 'increment',
-          ),
-          SizedBox(
-            width: 10,
-          ),
-          FloatingActionButton(
-            onPressed: () {},
-            child: Icon(Icons.remove),
-            heroTag: 'decrement',
-          ),
-        ],
-      ),
+          child: ElevatedButton(
+        onPressed: () {
+          final randInt = Random().nextInt(10);
+          print('$randInt');
+          context.read<ThemeBloc>().add(
+                ChangeThemeEvent(randInt: randInt),
+              );
+        },
+        child: Text('Change Theme'),
+      )),
+      // floatingActionButton: Row(
+      //   mainAxisAlignment: MainAxisAlignment.end,
+      //   children: [
+      //     FloatingActionButton(
+      //       onPressed: () {},
+      //       child: Icon(Icons.add),
+      //       heroTag: 'increment',
+      //     ),
+      //     SizedBox(
+      //       width: 10,
+      //     ),
+      //     FloatingActionButton(
+      //       onPressed: () {},
+      //       child: Icon(Icons.remove),
+      //       heroTag: 'decrement',
+      //     ),
+      //   ],
+      // ),
     );
   }
 }
