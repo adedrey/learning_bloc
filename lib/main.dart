@@ -43,24 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Flutter Demo Home Page'),
       ),
       body: BlocConsumer<CounterBloc, CounterState>(
-        listener: (context, state) {
-          // TODO: implement listener
-          if (state.counter == 5) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                content: Text("Counter is ${state.counter}"),
-              ),
-            );
-          } else if (state.counter < 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const OtherPage(),
-              ),
-            );
-          }
-        },
+        listener: (context, state) {},
         builder: (context, state) {
           return Center(
             child: Text(
