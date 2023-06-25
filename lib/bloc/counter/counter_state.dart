@@ -1,5 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-
 part of 'counter_bloc.dart';
 
 class CounterState extends Equatable {
@@ -25,4 +23,16 @@ class CounterState extends Equatable {
 
   @override
   String toString() => 'Counter: $counter';
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'counter': counter,
+    };
+  }
+
+  factory CounterState.fromJson(Map<String, dynamic> json) {
+    return CounterState(
+      counter: json['counter'] as int,
+    );
+  }
 }
