@@ -7,10 +7,24 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final _countCubit = CounterCubit();
   // This widget is the root of your application.
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _countCubit.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -18,10 +32,17 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: BlocProvider<CounterCubit>(
-        create: (context) => CounterCubit(),
-        child: const MyHomePage(),
-      ),
+      initialRoute: "/",
+      routes: {
+        '/': (context) =>
+            BlocProvider.value(value: _countCubit, child: MyHomePage()),
+        "/counter": (context) =>
+            BlocProvider.value(value: _countCubit, child: ShowCounter()),
+      },
+      // home: BlocProvider<CounterCubit>(
+      //   create: (context) => CounterCubit(),
+      //   child: const MyHomePage(),
+      // ),
     );
   }
 }
@@ -48,15 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider.value(
-                      value: context.read<CounterCubit>(),
-                      child: ShowCounter(),
-                    ),
-                  ),
-                );
+                Navigator.pushNamed(context, "/counter");
               },
               child: Text(
                 "Show Counter",
