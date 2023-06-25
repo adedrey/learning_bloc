@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:learn_bloc/cubit/counter/counter_cubit.dart';
+import 'package:learn_bloc/show_counter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +18,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(),
+      home: BlocProvider<CounterCubit>(
+        create: (context) => CounterCubit(),
+        child: const MyHomePage(),
+      ),
     );
   }
 }
@@ -37,27 +43,42 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Flutter Demo Home Page'),
       ),
       body: Center(
-        child: const Text(
-          '0',
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<CounterCubit>(),
+                      child: ShowCounter(),
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                "Show Counter",
+                style: TextStyle(
+                  fontSize: 20,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            ElevatedButton(
+              onPressed: () => context.read<CounterCubit>().increment(),
+              child: Text(
+                "Increment Counter",
+                style: TextStyle(
+                  fontSize: 20,
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: () {},
-            child: Icon(Icons.add),
-            heroTag: 'increment',
-          ),
-          SizedBox(
-            width: 10,
-          ),
-          FloatingActionButton(
-            onPressed: () {},
-            child: Icon(Icons.remove),
-            heroTag: 'decrement',
-          ),
-        ],
       ),
     );
   }

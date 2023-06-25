@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class OtherPage extends StatelessWidget {
-  const OtherPage({super.key});
+import 'cubit/counter/counter_cubit.dart';
+
+class ShowCounter extends StatelessWidget {
+  const ShowCounter({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,8 +15,8 @@ class OtherPage extends StatelessWidget {
         title: const Text("Other Page"),
       ),
       body: Center(
-        child: const Text(
-          "Other",
+        child: Text(
+          "${context.watch<CounterCubit>().state.counter}",
           style: TextStyle(fontSize: 50),
         ),
       ),
